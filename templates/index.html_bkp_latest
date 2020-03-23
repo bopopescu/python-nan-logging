@@ -1,0 +1,157 @@
+<html>
+	<head>
+	
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">	
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	<script>
+ 		 $( function() {
+	      		$( "#datepicker" ).datepicker();
+	         } );
+  </script>
+	</head>
+	<body>
+		<h3><font color="Blue"><center>Identification of Errors in Applogs</font></h3><br><br>	
+	
+		<p>search by FileName: <input id="fname" placeholder="Enter filename" type="text"></p>	
+	 	
+		<p>search by Status: <input id="status" placeholder="status" type="text"></p>
+
+		<p>search by Date: <input type="text" placeholder="mm/dd/yyyy" id="datepicker"></p>
+		
+		<p id="total_count"></p>
+
+		<p id="after_filter"></p>
+
+		<button onclick="getLogs();" id="btn1">Get Logs</button><br><br>
+		<!--<button onclick="getservererror();" id="btn2">500 errors</button>-->
+
+	<table id="records_table" border='1'>
+		    <tr>
+			<th>Remote Host</th>
+			<th>Status</th>
+			<th>Bytes</th>
+			<th>File Name</th>
+			<th>Date</th>
+		    </tr>
+	</table>
+
+
+
+	</body>
+
+	<script>
+function formatDate(date) {
+	var d = new Date(date),
+	month = '' + (d.getMonth() + 1),
+	day = '' + d.getDate(),
+	year = d.getFullYear();
+
+	        if (month.length < 2) 
+			        month = '0' + month;
+		    if (day.length < 2) 
+			            day = '0' + day;
+
+		        return [year, month, day].join('-');
+}
+function getLogs(){
+	document.getElementById("records_table").innerHTML = "<tr><th>Remote Host</th><th>Status</th><th>Bytes</th><th>Filename</th><th>date</th></tr>";
+  var fname = document.getElementById("fname").value;
+  var log_date = $("#datepicker").val();
+  var status = $("#status").val();
+
+  if(status == ""){
+  
+   status = null;
+  }
+	
+
+  if(fname == ""){
+    fname = null;
+  }
+
+  
+  if(log_date == "1970-01-01" || log_date == ""){
+	log_date = null;
+  }else{
+ 	log_date = formatDate(log_date);  
+  }
+ 
+  var gl_log_date = log_date;
+
+ 
+
+  var xmlHttp = new XMLHttpRequest();
+  xmlHttp.onreadystatechange = function() {
+  if (xmlHttp.readyState == 4 && xmlHttp.status == 200){
+	  var res = JSON.parse(xmlHttp.response);
+	  var count = res.count;
+		
+	  var count_elem = document.getElementById("total_count");
+	  count_elem.innerHTML = "Total count for the file is "+count;
+
+	  var data = res.data;
+	  for(var i=0;i<data.length;i++){
+		  var remote_host = data[i].remote_host;
+		  var apache_status = data[i].apache_status;
+		  var bytes = data[i].data_transfer;
+		  var file_name = data[i].filename;
+		  var log_date = data[i].log_date;
+		  document.getElementById("records_table").innerHTML+= "<tr><td>"+remote_host+"</td><td>"+apache_status+"</td><td>"+bytes+"</td><td>"+file_name+"</td><td>"+log_date+"</td></tr>"
+	  }
+	var elem = document.getElementById("after_filter");
+
+	if(gl_log_date != null && status != null){
+		
+		elem.innerHTML = "Log count for status "+status+" and date "+gl_log_date+" is "+data.length;
+
+	}else if(gl_log_date == null && status != null){
+
+		elem.innerHTML = "Log count for status "+status+" is "+data.length;
+	
+	}else if(gl_log_date !=null && status == null){
+	
+		elem.innerHTML = "Log count for date "+gl_log_date+" is "+data.length;
+	}
+
+
+ }
+ }
+  xmlHttp.open("GET", 'http://35.238.56.223:5000/get404errors?fname='+fname+'&log_date='+log_date+'&status='+status, true); // true for asynchronous
+  xmlHttp.send();
+}
+
+function getnotfound(){
+
+	//ajax
+
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() {
+	if (xmlHttp.readyState == 4 && xmlHttp.status == 200){
+		var data = JSON.parse(xmlHttp.response);
+		console.log(data);
+		for(var i=0;i<data.length;i++){
+			var error_code = data[i].error_type;
+			var filename = data[i].file_name;
+			var log_date = data[i].log_date;
+			document.getElementById("records_table").innerHTML+= "<tr><td>"+error_code+"</td><td>"+filename+"</td><td>"+log_date+"</td></tr>"
+
+		}
+	}
+
+	}
+	xmlHttp.open("GET", 'http://35.238.56.223:5000/get404errors', true); // true for asynchronous
+	xmlHttp.send();
+
+
+}
+
+
+function getservererror(){
+
+}
+	
+	</script>
+
+
+</html>
